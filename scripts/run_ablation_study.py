@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import os
 import pandas as pd
 from data.generate_synthetic_data import generate_synthetic_well_logging_data
@@ -19,14 +22,18 @@ def main():
 
     print(f"Original data shape: {df.shape}")
 
-    # Step 2: Augment each class to 300 samples
+    # Step 2: Augment each class to TARGET_SAMPLES_PER_CLASS samples
     X_list, y_list = [], []
-    for cls in df[LABEL_COLUMN].unique():
+    for cls in sorted(df[LABEL_COLUMN].unique()):  
         X_cls, y_cls = improved_smote(df[FEATURES], df[LABEL_COLUMN], cls)
         X_list.append(X_cls)
         y_list.append(y_cls)
-    df_balanced = pd.concat(X_list + y_list, axis=1)
-    print(f"Balanced data shape: {df_balanced.shape}")
+
+    X_balanced = pd.concat(X_list, ignore_index=True)
+    y_balanced = pd.concat(y_list, ignore_index=True)
+
+    df_balanced = X_balanced.copy()
+    df_balanced[LABEL_COLUMN] = y_balanced.values  
 
     # Step 3: Prepare datasets
     X_no_kpca, y_no_kpca = df_balanced[FEATURES], df_balanced[LABEL_COLUMN]

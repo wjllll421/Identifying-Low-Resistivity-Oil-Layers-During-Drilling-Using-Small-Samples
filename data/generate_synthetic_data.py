@@ -1,51 +1,84 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+import os
 import numpy as np
 import pandas as pd
 from config.settings import FEATURES, CLASS_NUM2NAME
 
 def generate_synthetic_well_logging_data(n_samples_per_class=100, random_state=42):
     """
-    Generate synthetic well logging data for reproducibility.
-    Mimics typical GR, TG, hydrocarbon features for three classes.
+    Generate synthetic well logging data with:
+      - '备注': Chinese class name (for readability)
+      - '结论': numeric label (for model training: 0, 1, 2)
     """
     np.random.seed(random_state)
-    classes = list(CLASS_NUM2NAME.keys())
+    classes = list(CLASS_NUM2NAME.keys())  # [0, 1, 2]
     data_frames = []
+
+    class_params = {
+        0: {  # 低阻油
+            'GR': (69.327, 10.0),
+            'TG': (34.731, 25.0),
+            'C1': (10.584, 12.0),
+            'C2': (0.423, 0.6),
+            'C3': (0.065, 0.08),
+            'iC4': (0.024, 0.05),
+            'nC4': (0.045, 0.15), 
+            'iC5': (0.074, 0.08),
+            'nC5': (0.016, 0.02),
+        },
+        1: {  # 正常油
+            'GR': (67.318, 6.0),
+            'TG': (34.731, 20.0),
+            'C1': (19.710, 15.0),
+            'C2': (1.086, 0.8),
+            'C3': (0.169, 0.1),
+            'iC4': (0.062, 0.05),
+            'nC4': (0.058, 0.05),
+            'iC5': (0.044, 0.03),
+            'nC5': (0.012, 0.01),
+        },
+        2: {  # 水层
+            'GR': (62.129, 5.5),
+            'TG': (4.259, 1.5),
+            'C1': (3.338, 1.2),
+            'C2': (0.040, 0.04),
+            'C3': (0.006, 0.005),
+            'iC4': (0.003, 0.004),
+            'nC4': (0.002, 0.004),
+            'iC5': (0.005, 0.005),
+            'nC5': (0.0004, 0.0005),
+        }
+    }
 
     for cls in classes:
         n = n_samples_per_class
-        if cls == 0:  # Low-resistivity oil
-            GR = np.clip(np.random.normal(65, 8, n), 40, 90)
-            TG = np.clip(np.random.normal(0.85, 0.1, n), 0.6, 1.2)
-            C1 = np.clip(np.random.normal(75, 6, n), 50, 100)
-        elif cls == 1:  # Normal oil
-            GR = np.clip(np.random.normal(45, 7, n), 30, 70)
-            TG = np.clip(np.random.normal(0.45, 0.06, n), 0.3, 0.7)
-            C1 = np.clip(np.random.normal(88, 4, n), 70, 100)
-        else:  # Water layer
-            GR = np.clip(np.random.normal(85, 10, n), 60, 110)
-            TG = np.clip(np.random.normal(1.15, 0.12, n), 0.9, 1.5)
-            C1 = np.clip(np.random.normal(25, 8, n), 5, 50)
+        df_cls = pd.DataFrame()
 
-        # Derived gas components (physically plausible ratios)
-        C2 = C1 * np.random.uniform(0.04, 0.08, n)
-        C3 = C2 * np.random.uniform(0.15, 0.35, n)
-        iC4 = C3 * np.random.uniform(0.25, 0.45, n)
-        nC4 = iC4 * np.random.uniform(0.9, 1.3, n)
-        iC5 = C3 * np.random.uniform(0.08, 0.18, n)
-        nC5 = iC5 * np.random.uniform(0.85, 1.15, n)
 
-        df_cls = pd.DataFrame({
-            'GR': GR, 'TG': TG, 'C1': C1, 'C2': C2, 'C3': C3,
-            'iC4': iC4, 'nC4': nC4, 'iC5': iC5, 'nC5': nC5,
-            '备注': CLASS_NUM2NAME[cls]
-        })
+        for feat in FEATURES:
+            if feat in class_params[cls]:
+                mean, std = class_params[cls][feat]
+                values = np.random.normal(mean, std, n)
+
+                values = np.clip(values, 0, None)
+                df_cls[feat] = values
+            else:
+                
+                df_cls[feat] = np.zeros(n)
+
+        df_cls['备注'] = CLASS_NUM2NAME[cls]      
+        df_cls['结论'] = cls                       
+
         data_frames.append(df_cls)
 
     full_df = pd.concat(data_frames, ignore_index=True)
     return full_df
 
+
 if __name__ == "__main__":
-    import os
     os.makedirs("data", exist_ok=True)
     df = generate_synthetic_well_logging_data(n_samples_per_class=100)
     output_path = "data/synthetic_data.xlsx"

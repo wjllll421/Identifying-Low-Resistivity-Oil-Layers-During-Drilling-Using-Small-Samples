@@ -3,12 +3,14 @@ RANDOM_STATE = 42
 
 # Data
 FEATURES = ['GR', 'TG', 'C1', 'C2', 'C3', 'iC4', 'nC4', 'iC5', 'nC5']
-LABEL_COLUMN = '备注'
+LABEL_COLUMN = '结论'
+
 CLASS_NUM2NAME = {
-    0: "Low-Resistivity Reservoir",
-    1: "Normal Reservoir",
-    2: "Water Layer"
+    0: "低阻油",         
+    1: "正常油",
+    2: "水层"
 }
+
 TARGET_SAMPLES_PER_CLASS = 300
 
 # KPCA
